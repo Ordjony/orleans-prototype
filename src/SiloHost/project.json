@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+  "dependencies": {
+    "Microsoft.NETCore.App": {
+        "type": "platform",
+        "version": "1.0.1"
+    },
+    "Microsoft.Orleans.Core": "2.0.0-preview1-201612131558",
+    "Microsoft.Orleans.OrleansCodeGenerator": "2.0.0-preview1-201612131558",
+    "Microsoft.Orleans.OrleansProviders": "2.0.0-preview1-201612131558",
+    "Microsoft.Orleans.OrleansRuntime": "2.0.0-preview1-201612131558"
+  },
+
+  "frameworks": {
+    "netcoreapp1.0": {
+      "imports": "dnxcore50"
+    }
+  }
+}
