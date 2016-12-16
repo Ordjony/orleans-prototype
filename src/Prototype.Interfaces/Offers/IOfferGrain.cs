@@ -5,6 +5,9 @@ namespace Prototype.Interfaces.Offers
 {
     public interface IOfferGrain : IGrainWithIntegerKey
     {
-        Task<bool> ReserveForOrder(int orderId, int count);
+        Task<bool> ReserveForOrder(long orderId, int count);
+        Task CancelOrderReserv(long orderId);
+        Task<bool> ConfirmOrderReservation(long orderId);
+        Task ApplyStock(int stock);
     }
 }

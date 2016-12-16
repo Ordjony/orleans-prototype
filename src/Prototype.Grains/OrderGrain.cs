@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
 using Prototype.Interfaces.Offers;
@@ -13,6 +14,11 @@ namespace Prototype.Grains
         private readonly List<OrderItem> _items = new List<OrderItem>();
         private readonly Dictionary<int, IOfferGrain> _offerGrains = new Dictionary<int, IOfferGrain>();
 
+        public override Task OnActivateAsync()
+        {
+            return base.OnActivateAsync();
+        }
+
         public Task<OrderState> GetState()
         {
             return Task.FromResult(_state);
@@ -25,7 +31,7 @@ namespace Prototype.Grains
                 throw new Exception("Order already has created");
             }
 
-            var reservePromise = new List<Task>();
+            var reservePromise = new List<Task<bool>>();
 
             foreach (var orderItem in createData.Items)
             {
@@ -37,6 +43,29 @@ namespace Prototype.Grains
             }
 
             await Task.WhenAll(reservePromise);
+            if (reservePromise.Any(t => !t.Result))
+            {
+                foreach (var offerGrain in _offerGrains)
+                {
+                    await offerGrain.Value.CancelOrderReserv(this.GetPrimaryKeyLong());
+                }
+
+                throw new Exception("Order can't reserve all items.");
+            }
+
+            _state = OrderState.Created;
+        }
+
+        public async Task ConfirmPayment()
+        {
+            var promises = new List<Task<bool>>(_offerGrains.Count);
+
+            foreach (var offerGrain in _offerGrains)
+            {
+                promises.Add(offerGrain.Value.ConfirmOrderReservation(this.GetPrimaryKeyLong()));
+            }
+
+            await Task.WhenAll(promises);
         }
 
         private bool IsCreated()
