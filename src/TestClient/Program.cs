@@ -18,7 +18,7 @@ namespace TestClient
             var config = ClientConfiguration.LocalhostSilo();
             try
             {
-                //InitializeWithRetries(config, initializeAttemptsBeforeFailing: 5);
+                InitializeWithRetries(config, initializeAttemptsBeforeFailing: 5);
             }
             catch (Exception ex)
             {
@@ -71,10 +71,10 @@ namespace TestClient
         {
             var tasks = new List<Task>();
 
-            var offerRandom = new Random(123);
-            var countRandom = new Random(4984565);
+            var offerRandom = new Random(854332554);
+            var countRandom = new Random(1687865657);
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 1; i < 100; i++)
             {
                 var order = GrainClient.GrainFactory.GetGrain<IOrderGrain>(i);
                 var count = countRandom.Next(1, 5);
@@ -87,7 +87,7 @@ namespace TestClient
                         var itemId = offerRandom.Next(1, 10);
                         if (orderItems.All(oi => oi.Id != itemId))
                         {
-                            var item = new OrderItem { Id = itemId, Quantity = 1 };
+                            var item = new OrderItem { Id = itemId, Quantity = 1, Sku = "123"};
                             orderItems.Add(item);
                             repeat = false;
                         }
@@ -102,7 +102,15 @@ namespace TestClient
                 tasks.Add(order.Create(createData));
             }
 
-            await Task.WhenAll(tasks);
+            try
+            {
+                await Task.WhenAll(tasks);
+                Console.WriteLine("All orders processing finished.");
+            }
+            catch (Exception exception)
+            {
+                
+            }
         }
     }
 }

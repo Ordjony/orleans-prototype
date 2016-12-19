@@ -25,11 +25,11 @@ namespace Prototype.Grains
             return Task.FromResult(_state);
         }
 
-        public async Task Create(OrderCreateData createData)
+        public async Task<bool> Create(OrderCreateData createData)
         {
             if (IsCreated())
             {
-                throw new Exception("Order already has created");
+                return false;
             }
 
             var reservePromise = new List<Task<bool>>();
@@ -52,10 +52,11 @@ namespace Prototype.Grains
                 }
 
                 _state = OrderState.NotReserved;
-                throw new Exception("Order can't reserve all items.");
+                return false;
             }
 
             _state = OrderState.Created;
+            return true;
         }
 
         public async Task ConfirmPayment()
