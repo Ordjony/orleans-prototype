@@ -6,5 +6,6 @@
         Created,
         Shipped,
         Cancelled,
+        NotReserved
     }
 }

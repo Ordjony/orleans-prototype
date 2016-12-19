@@ -11,6 +11,7 @@ namespace Prototype.Grains
     public class OrderGrain : Grain, IOrderGrain
     {
         private OrderState _state = OrderState.NotCreated;
+        private int _version = 0;
         private readonly List<OrderItem> _items = new List<OrderItem>();
         private readonly Dictionary<int, IOfferGrain> _offerGrains = new Dictionary<int, IOfferGrain>();
 
@@ -38,7 +39,7 @@ namespace Prototype.Grains
                 var offer = GrainFactory.GetGrain<IOfferGrain>(orderItem.Id);
                 _offerGrains.Add(orderItem.Id, offer);
 
-                reservePromise.Add(offer.ReserveForOrder((int)this.GetPrimaryKeyLong(), orderItem.Quantity));
+                reservePromise.Add(offer.ReserveForOrder(this.GetPrimaryKeyLong(), orderItem.Quantity));
                 _items.Add(orderItem);
             }
 
@@ -50,6 +51,7 @@ namespace Prototype.Grains
                     await offerGrain.Value.CancelOrderReserv(this.GetPrimaryKeyLong());
                 }
 
+                _state = OrderState.NotReserved;
                 throw new Exception("Order can't reserve all items.");
             }
 
@@ -58,6 +60,11 @@ namespace Prototype.Grains
 
         public async Task ConfirmPayment()
         {
+            if (IsCreated())
+            {
+                throw new Exception("Order already has created");
+            }
+
             var promises = new List<Task<bool>>(_offerGrains.Count);
 
             foreach (var offerGrain in _offerGrains)
@@ -71,6 +78,12 @@ namespace Prototype.Grains
         private bool IsCreated()
         {
             return _state != OrderState.NotCreated;
+        }
+
+        private async Task SaveVersion()
+        {
+            _version++;
+            // TODO: Save to storage
         }
     }
 }

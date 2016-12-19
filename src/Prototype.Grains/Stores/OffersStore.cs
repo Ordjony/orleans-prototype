@@ -42,7 +42,30 @@ namespace Prototype.Grains.Stores
                 Stock = 8,
                 Price = 82,
             },
-
+            [7] = new OfferData
+            {
+                Sku = "435645",
+                Stock = 80,
+                Price = 200,
+            },
+            [8] = new OfferData
+            {
+                Sku = "12347",
+                Stock = 120,
+                Price = 884,
+            },
+            [9] = new OfferData
+            {
+                Sku = "09887",
+                Stock = 50,
+                Price = 64,
+            },
+            [10] = new OfferData
+            {
+                Sku = "864654",
+                Stock = 80,
+                Price = 100,
+            }
         };
     }
 }
