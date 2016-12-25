@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Orleans.Runtime;
 using Prototype.Interfaces;
+using Prototype.Interfaces.Analytics;
 using Prototype.Interfaces.Orders;
 
 namespace TestClient
@@ -28,8 +29,8 @@ namespace TestClient
                 return 1;
             }
 
-            //DoClientWork().Wait();
-            DoLoadWork().Wait();
+            DoClientWork().Wait();
+            //DoLoadWork().Wait();
             Console.WriteLine("Press Enter to terminate...");
             Console.ReadLine();
             return 0;
@@ -63,8 +64,14 @@ namespace TestClient
         {
             // example of calling grains from the initialized client
             var order = GrainClient.GrainFactory.GetGrain<IOrderGrain>(0);
-            var response = await order.GetState();
+            var response = await order.GetState().ConfigureAwait(false);
             Console.WriteLine("\n\n{0}\n\n", response);
+
+            var analyticsGrain = GrainClient.GrainFactory.GetGrain<IRealtimeAnalyticsGrain>(0);
+            await analyticsGrain.TrackAction("Some action");
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            await analyticsGrain.TrackAction("Another action");
+            await analyticsGrain.TrackAction("Third action");
         }
 
         private static async Task DoLoadWork()
