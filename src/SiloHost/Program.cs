@@ -1,45 +1,52 @@
 ﻿using System;
-using System.Net;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Orleans.Hosting;
 using Orleans.Runtime.Configuration;
+using Prototype.Grains;
 
 namespace OrleansSiloHost
 {
     public class Program
     {
-        private static OrleansHostWrapper _hostWrapper;
-
         public static int Main(string[] args)
         {
-            int exitCode = StartSilo(args);
-
-            Console.WriteLine("Press Enter to terminate...");
-            Console.ReadLine();
-
-            exitCode += ShutdownSilo();
-
-            //either StartSilo or ShutdownSilo failed would result on a non-zero exit code. 
-            return exitCode;
+            return RunMainAsync().Result;
         }
-        private static int StartSilo(string[] args)
+
+        private static async Task<int> RunMainAsync()
+        {
+            try
+            {
+                var host = await StartSilo();
+                Console.WriteLine("Press Enter to terminate...");
+                Console.ReadLine();
+
+                await host.StopAsync();
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return 1;
+            }
+        }
+
+        private static async Task<ISiloHost> StartSilo()
         {
             // define the cluster configuration
             var config = ClusterConfiguration.LocalhostPrimarySilo();
             config.AddMemoryStorageProvider();
-            // config.Defaults.DefaultTraceLevel = Orleans.Runtime.Severity.Verbose3;
 
-            config.Defaults.TraceFileName = null;
+            var builder = new SiloHostBuilder()
+                .UseConfiguration(config)
+                .AddApplicationPartsFromReferences(typeof(OrderGrain).Assembly)
+                .ConfigureLogging(logging => logging.AddConsole());
 
-            _hostWrapper = new OrleansHostWrapper(config, args);
-            return _hostWrapper.Run();
-        }
-
-        private static int ShutdownSilo()
-        {
-            if (_hostWrapper != null)
-            {
-                return _hostWrapper.Stop();
-            }
-            return 0;
+            var host = builder.Build();
+            await host.StartAsync();
+            return host;
         }
     }
 }

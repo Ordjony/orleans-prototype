@@ -6,6 +6,10 @@
     <OutputType>Exe</OutputType>
     <PackageId>SiloHost</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
+
+    <GenerateAssemblyConfiguration>false</GenerateAssemblyConfiguration>
+    <GenerateAssemblyCompany>false</GenerateAssemblyCompany>
+    <GenerateAssemblyProduct>false</GenerateAssemblyProduct>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0" />
     <PackageReference Include="Microsoft.Orleans.Core" Version="2.0.0-preview*" />
-    <PackageReference Include="Microsoft.Orleans.OrleansCodeGenerator" Version="2.0.0-preview*" />
     <PackageReference Include="Microsoft.Orleans.OrleansProviders" Version="2.0.0-preview*" />
     <PackageReference Include="Microsoft.Orleans.OrleansRuntime" Version="2.0.0-preview*" />
   </ItemGroup>

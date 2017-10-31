@@ -3,10 +3,9 @@ using Orleans.Runtime.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
-using Prototype.Interfaces;
 using Prototype.Interfaces.Analytics;
 using Prototype.Interfaces.Orders;
 
@@ -16,34 +15,44 @@ namespace TestClient
     {
         static int Main(string[] args)
         {
-            var config = ClientConfiguration.LocalhostSilo();
-            try
-            {
-                InitializeWithRetries(config, initializeAttemptsBeforeFailing: 5);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Orleans client initialization failed failed due to {ex}");
-
-                Console.ReadLine();
-                return 1;
-            }
-
-            DoClientWork().Wait();
-            //DoLoadWork().Wait();
-            Console.WriteLine("Press Enter to terminate...");
-            Console.ReadLine();
-            return 0;
+            return RunMainAsync().Result;
         }
 
-        private static void InitializeWithRetries(ClientConfiguration config, int initializeAttemptsBeforeFailing)
+        private static async Task<int> RunMainAsync()
+        {
+            try
+            {
+                using (var client = await StartClientWithRetries())
+                {
+                    await DoClientWork(client);
+                    Console.ReadKey();
+                }
+
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return 1;
+            }
+        }
+
+        private static async Task<IClusterClient> StartClientWithRetries(int initializeAttemptsBeforeFailing = 5)
         {
             int attempt = 0;
+            IClusterClient client;
             while (true)
             {
                 try
                 {
-                    GrainClient.Initialize(config);
+                    var config = ClientConfiguration.LocalhostSilo();
+                    client = new ClientBuilder()
+                        .UseConfiguration(config)
+                        .AddApplicationPartsFromReferences(typeof(IOrderGrain).Assembly)
+                        .ConfigureLogging(logging => logging.AddConsole())
+                        .Build();
+
+                    await client.Connect();
                     Console.WriteLine("Client successfully connect to silo host");
                     break;
                 }
@@ -55,26 +64,28 @@ namespace TestClient
                     {
                         throw;
                     }
-                    Thread.Sleep(TimeSpan.FromSeconds(2));
+                    await Task.Delay(TimeSpan.FromSeconds(4));
                 }
             }
+
+            return client;
         }
 
-        private static async Task DoClientWork()
+        private static async Task DoClientWork(IClusterClient client)
         {
             // example of calling grains from the initialized client
-            var order = GrainClient.GrainFactory.GetGrain<IOrderGrain>(0);
+            var order = client.GetGrain<IOrderGrain>(0);
             var response = await order.GetState().ConfigureAwait(false);
             Console.WriteLine("\n\n{0}\n\n", response);
 
-            var analyticsGrain = GrainClient.GrainFactory.GetGrain<IRealtimeAnalyticsGrain>(0);
+            var analyticsGrain = client.GetGrain<IRealtimeAnalyticsGrain>(0);
             await analyticsGrain.TrackAction("Some action");
             await Task.Delay(TimeSpan.FromSeconds(30));
             await analyticsGrain.TrackAction("Another action");
             await analyticsGrain.TrackAction("Third action");
         }
 
-        private static async Task DoLoadWork()
+        private static async Task DoLoadWork(IClusterClient client)
         {
             var tasks = new List<Task>();
 
@@ -83,7 +94,7 @@ namespace TestClient
 
             for (int i = 1; i < 100; i++)
             {
-                var order = GrainClient.GrainFactory.GetGrain<IOrderGrain>(i);
+                var order = client.GetGrain<IOrderGrain>(i);
                 var count = countRandom.Next(1, 5);
                 var orderItems = new List<OrderItem>();
                 for (int j = 0; j < count; j++)
