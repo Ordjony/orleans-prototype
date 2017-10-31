@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>SiloHost</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>SiloHost</PackageId>
+    <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Prototype.Grains\Prototype.Grains.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Core" Version="2.0.0-preview*" />
+    <PackageReference Include="Microsoft.Orleans.OrleansCodeGenerator" Version="2.0.0-preview*" />
+    <PackageReference Include="Microsoft.Orleans.OrleansProviders" Version="2.0.0-preview*" />
+    <PackageReference Include="Microsoft.Orleans.OrleansRuntime" Version="2.0.0-preview*" />
+  </ItemGroup>
+
+</Project>
