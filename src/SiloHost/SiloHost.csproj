@@ -7,6 +7,8 @@
     <PackageId>SiloHost</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
 
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
     <GenerateAssemblyConfiguration>false</GenerateAssemblyConfiguration>
     <GenerateAssemblyCompany>false</GenerateAssemblyCompany>
     <GenerateAssemblyProduct>false</GenerateAssemblyProduct>
@@ -14,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Prototype.Grains\Prototype.Grains.csproj" />
+    <ProjectReference Include="..\Prototype.Interfaces\Prototype.Interfaces.csproj" />
   </ItemGroup>
 
   <ItemGroup>
