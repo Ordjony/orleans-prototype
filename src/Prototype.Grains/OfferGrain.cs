@@ -1,76 +1,78 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Orleans;
 using Prototype.Grains.Stores;
 using Prototype.Interfaces.Offers;
+using Prototype.Interfaces.Products;
 
 namespace Prototype.Grains
 {
-    public class OfferGrain : Grain, IOfferGrain
+    public class OfferGrain : Grain<OfferData>, IOfferGrain
     {
-        private OfferData _offerData;
-        private int _stock = 0;
-        private int _reserved = 0;
-        private Dictionary<long, int> _orderReserved = new Dictionary<long, int>();
+        private IProductGrain _product;
 
-        public override Task OnActivateAsync()
+        public override async Task OnActivateAsync()
         {
-            OfferData data;
-            OffersStore.Database.TryGetValue(this.GetPrimaryKeyLong(), out data);
-            _offerData = data;
+            await base.OnActivateAsync();
 
-            _stock = data?.Stock ?? 0;
-
-            return base.OnActivateAsync();
-        }
-
-        public Task<bool> ReserveForOrder(long orderId, int count)
-        {
-            var newReservation = _reserved + count;
-            if (newReservation > _stock)
+            if (State.Sku != null)
             {
-                return Task.FromResult(false);
+                return;
             }
 
-            _orderReserved.Add(orderId, count);
-            _reserved = newReservation;
+            State = OffersStore.Instance.Value.GetById(this.GetPrimaryKeyLong());
 
-            return Task.FromResult(true);
+            _product = GrainFactory.GetGrain<IProductGrain>(State.ProductId);
         }
 
-        public Task CancelOrderReserv(long orderId)
+        public async Task<bool> ReserveForOrder(long orderId, int count)
         {
-            int reservedOrderStock;
-            if (!_orderReserved.TryGetValue(orderId, out reservedOrderStock))
+            var newReservation = State.StockReserved + count;
+            if (newReservation > State.Stock)
             {
-                return Task.CompletedTask;
+                return false;
             }
 
-            _orderReserved.Remove(orderId);
-            _reserved -= reservedOrderStock;
+            State.OrderReserved.Add(orderId, count);
+            State.StockReserved = newReservation;
 
-            return Task.CompletedTask;
+            await WriteStateAsync();
+
+            return true;
         }
 
-        public Task<bool> ConfirmOrderReservation(long orderId)
+        public async Task CancelOrderReserv(long orderId)
         {
-            int reservedOrderStock;
-            if (!_orderReserved.TryGetValue(orderId, out reservedOrderStock))
+            if (!State.OrderReserved.TryGetValue(orderId, out var reservedOrderStock))
             {
-                return Task.FromResult(false);
+                return;
             }
 
-            _stock -= reservedOrderStock;
-            _reserved -= reservedOrderStock;
-            _orderReserved.Remove(orderId);
+            State.OrderReserved.Remove(orderId);
+            State.StockReserved -= reservedOrderStock;
 
-            return Task.FromResult(true);
+            await WriteStateAsync();
         }
 
-        public Task ApplyStock(int stock)
+        public async Task<bool> ConfirmOrderReservation(long orderId)
         {
-            _stock = stock;
-            return Task.CompletedTask;
+            if (!State.OrderReserved.TryGetValue(orderId, out var reservedOrderStock))
+            {
+                return false;
+            }
+
+            State.Stock -= reservedOrderStock;
+            State.StockReserved -= reservedOrderStock;
+            State.OrderReserved.Remove(orderId);
+
+            await WriteStateAsync();
+
+            return true;
+        }
+
+        public async Task ApplyStock(int stock)
+        {
+            State.Stock = stock;
+            await WriteStateAsync();
         }
     }
 }

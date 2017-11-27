@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Prototype.Interfaces.Analytics;
+using Prototype.Interfaces.Offers;
 using Prototype.Interfaces.Orders;
+using Prototype.Interfaces.Products;
 
 namespace TestClient
 {
@@ -74,15 +76,24 @@ namespace TestClient
         private static async Task DoClientWork(IClusterClient client)
         {
             // example of calling grains from the initialized client
-            var order = client.GetGrain<IOrderGrain>(0);
-            var response = await order.GetState().ConfigureAwait(false);
-            Console.WriteLine("\n\n{0}\n\n", response);
+            //var order = client.GetGrain<IOrderGrain>(0);
+            //var response = await order.GetState().ConfigureAwait(false);
+            //Console.WriteLine("\n\n{0}\n\n", response);
 
-            var analyticsGrain = client.GetGrain<IRealtimeAnalyticsGrain>(0);
-            await analyticsGrain.TrackAction("Some action");
-            await Task.Delay(TimeSpan.FromSeconds(30));
-            await analyticsGrain.TrackAction("Another action");
-            await analyticsGrain.TrackAction("Third action");
+            //var analyticsGrain = client.GetGrain<IRealtimeAnalyticsGrain>(0);
+            //await analyticsGrain.TrackAction("Some action");
+            //await Task.Delay(TimeSpan.FromSeconds(30));
+            //await analyticsGrain.TrackAction("Another action");
+            //await analyticsGrain.TrackAction("Third action");
+
+
+            var offer = client.GetGrain<IOfferGrain>(1);
+            Console.WriteLine("Offer activated");
+            var product = client.GetGrain<IProductGrain>(1);
+            Console.WriteLine("Product activated");
+
+            await offer.ApplyStock(2);
+            Console.WriteLine("Offer stock applied");
         }
 
         private static async Task DoLoadWork(IClusterClient client)
